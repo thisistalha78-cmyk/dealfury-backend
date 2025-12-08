@@ -1,22 +1,36 @@
 const express = require("express");
 const router = express.Router();
 
-const getLocation = require("../services/nominatim.js");
-const getDeals = require("../services/serpapi.js");
-const getSummary = require("../services/deepseek.js");
+const serpapiSearch = require("../services/serpapi");
+const openrouterSummary = require("../services/openrouter");
 
-router.get("/", async (req, res) => {
+router.get("/search", async (req, res) => {
     const q = req.query.q;
-    if (!q) return res.json({ error: "empty query" });
+    if (!q) return res.json({ error: "Missing query parameter" });
 
-    const location = await getLocation(q);
-    const deals = await getDeals(q, location);
-    const summary = await getSummary(deals);
+    try {
+        // 1️⃣ Fetch deals from SerpAPI
+        const serp = await serpapiSearch(q);
+        const deals = serp.deals || serp.shopping_results || [];
 
-    res.json({
-        summary,
-        deals
-    });
+        // 2️⃣ Convert deals → summary text
+        const textBlock = deals
+            .slice(0, 10)
+            .map((d, i) => `${i + 1}) ${d.title} — Price: ${d.extracted_price}`)
+            .join("\n");
+
+        // 3️⃣ Get AI summary using OpenRouter
+        const summary = await openrouterSummary(textBlock);
+
+        res.json({
+            summary,
+            deals
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.json({ summary: "Something went wrong", deals: [] });
+    }
 });
 
 module.exports = router;
