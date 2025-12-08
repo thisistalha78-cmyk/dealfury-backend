@@ -1,40 +1,45 @@
 const fetch = require("node-fetch");
 
-module.exports = async function summaryAI(products) {
-    try {
-        if (!products || products.length === 0) return "No deals found.";
+async function summaryAI(deals) {
+  try {
+    if (!deals || deals.length === 0) return "No deals found.";
 
-        const text = products
-            .slice(0, 5)
-            .map((p, i) => `#${i+1}: ${p.title} — ${p.extracted_price || p.price}`)
-            .join("\n");
+    const topDeals = deals.slice(0, 5)
+      .map(d => `${d.title} - $${d.extracted_price || d.price || "N/A"}`)
+      .join("\n");
 
-        const prompt = `
-Analyze these shopping deals and explain:
-1. Which one is best and why
-2. How much can the user save?
-3. Suggest one alternative.
-Deals:
-${text}
-`;
+    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: "You are a shopping assistant. Compare prices." },
+          { role: "user", content: `Here are product prices:\n\n${topDeals}\n\nWhich one is the best deal and why?` }
+        ]
+      })
+    });
 
-        const res = await fetch("https://api.deepseek.com/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": "Bearer " + process.env.DEEPSEEK_API_KEY,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                model: "deepseek-chat",
-                messages: [{ role: "user", content: prompt }]
-            })
-        });
+    const data = await response.json();
 
-        const json = await res.json();
-        return json.choices[0].message.content;
+    console.log("==== RAW DEEPSEEK RESPONSE ====");
+    console.log(JSON.stringify(data, null, 2));
 
-    } catch (err) {
-        console.log("DeepSeek error:", err);
-        return "AI summary unavailable.";
-    }
-};
+    // FIX: Safe choice reading
+    const summary =
+      data?.choices?.[0]?.message?.content ||
+      data?.error?.message ||
+      "AI summary unavailable.";
+
+    return summary;
+
+  } catch (err) {
+    console.error("DeepSeek Error:", err);
+    return "AI summary unavailable.";
+  }
+}
+
+module.exports = summaryAI;
