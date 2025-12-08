@@ -1,12 +1,12 @@
 const express = require("express");
-const cors = require("cors");
-const searchRoute = require("./api/search.js");
-
 const app = express();
+const cors = require("cors");
+
 app.use(cors());
 app.use(express.json());
 
-app.use("/api/search", searchRoute);
+// API
+app.use("/api", require("./api/search"));
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log("🚀 Backend running on port " + PORT));
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () => console.log("Backend running on port", PORT));
