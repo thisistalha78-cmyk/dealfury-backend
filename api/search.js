@@ -9,17 +9,16 @@ router.get("/search", async (req, res) => {
     if (!q) return res.json({ error: "Missing query parameter" });
 
     try {
-        // 1️⃣ Fetch deals from SerpAPI
-        const serp = await serpapiSearch(q);
-        const deals = serp.deals || serp.shopping_results || [];
+        // Fetch deals array directly
+        const deals = await serpapiSearch(q);
 
-        // 2️⃣ Convert deals → summary text
+        // Prepare summary text (first 10 results)
         const textBlock = deals
             .slice(0, 10)
-            .map((d, i) => `${i + 1}) ${d.title} — Price: ${d.extracted_price}`)
+            .map((d, i) => `${i + 1}) ${d.title || "No Title"} — Price: ${d.extracted_price || "N/A"}`)
             .join("\n");
 
-        // 3️⃣ Get AI summary using OpenRouter
+        // Get summary
         const summary = await openrouterSummary(textBlock);
 
         res.json({
@@ -34,3 +33,4 @@ router.get("/search", async (req, res) => {
 });
 
 module.exports = router;
+
