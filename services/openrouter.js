@@ -1,6 +1,4 @@
-console.log("LOADED OPENROUTER KEY:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
-
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 
 async function openrouterSummary(text) {
     const API_KEY = process.env.OPENROUTER_API_KEY;
@@ -16,25 +14,29 @@ async function openrouterSummary(text) {
             headers: {
                 "Authorization": `Bearer ${API_KEY}`,
                 "Content-Type": "application/json",
-                "HTTP-Referer": "https://dealfury.com",       // তোমার অ্যাপ লিঙ্ক
+                "HTTP-Referer": "https://dealfury.com",
                 "X-Title": "Dealfury AI Summary"
             },
             body: JSON.stringify({
-                model: "google/gemma-3n-e2b-it:free",  // FREE MODEL
+                model: "google/gemma-3n-e2b-it:free",
                 messages: [
-                    { role: "system", content: "Summarize the following shopping deals in short:" },
+                    { role: "system", content: "Summarize these deals briefly:" },
                     { role: "user", content: text }
                 ]
             })
         });
 
         const data = await res.json();
-
-        return data?.choices?.[0]?.message?.content || "AI summary unavailable.";
+        return data?.choices?.[0]?.message?.content || "Summary not available.";
+        
     } catch (err) {
         console.error("OpenRouter Error:", err);
         return "Summary generation failed.";
     }
+}
+
+export default openrouterSummary;
+
 }
 
 module.exports = openrouterSummary;
