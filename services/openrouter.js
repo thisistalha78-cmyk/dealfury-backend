@@ -1,4 +1,4 @@
-import fetch from "node-fetch";
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 async function openrouterSummary(text) {
     const API_KEY = process.env.OPENROUTER_API_KEY;
@@ -27,16 +27,13 @@ async function openrouterSummary(text) {
         });
 
         const data = await res.json();
-        return data?.choices?.[0]?.message?.content || "Summary not available.";
-        
+
+        return data?.choices?.[0]?.message?.content || "AI summary unavailable.";
+
     } catch (err) {
         console.error("OpenRouter Error:", err);
         return "Summary generation failed.";
     }
-}
-
-export default openrouterSummary;
-
 }
 
 module.exports = openrouterSummary;
