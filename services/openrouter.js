@@ -1,3 +1,5 @@
+console.log("LOADED OPENROUTER KEY:", process.env.OPENROUTER_API_KEY ? "YES" : "NO");
+
 const fetch = require("node-fetch");
 
 async function openrouterSummary(text) {
