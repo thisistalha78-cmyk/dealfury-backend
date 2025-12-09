@@ -1,30 +1,17 @@
-const fetch = require("node-fetch");
+import fetch from "node-fetch";
 
-module.exports = async function getDeals(query) {
+export default async function getDeals(query) {
     try {
-
-        const apiKey = process.env.SERPAPI_KEY;
-
-        if (!apiKey) {
-            console.log("❌ SERPAPI_KEY missing!");
-            return [];
-        }
-
-        const url = `https://serpapi.com/search.json?engine=google_shopping&q=${encodeURIComponent(query)}&api_key=${apiKey}`;
+        const url = `https://serpapi.com/search.json?engine=google_shopping&q=${encodeURIComponent(query)}&api_key=${process.env.SERP_API_KEY}`;
 
         const r = await fetch(url);
         const json = await r.json();
 
-        console.log("SERPAPI RAW JSON:", Object.keys(json));  // DEBUG LOG
-
-        // Merge all possible shopping results
         const results = [
             ...(json.shopping_results || []),
             ...(json.inline_shopping_results || []),
             ...(json.categorized_shopping_results || [])
         ];
-
-        console.log("FINAL MERGED RESULTS:", results.length); // DEBUG LOG
 
         return results;
 
@@ -32,4 +19,5 @@ module.exports = async function getDeals(query) {
         console.log("SerpAPI error:", err);
         return [];
     }
-};
+}
+
