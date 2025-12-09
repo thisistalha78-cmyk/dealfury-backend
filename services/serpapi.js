@@ -1,6 +1,6 @@
-import fetch from "node-fetch";
+const fetch = require("node-fetch");
 
-export default async function getDeals(query) {
+async function getDeals(query) {
     try {
         const url = `https://serpapi.com/search.json?engine=google_shopping&q=${encodeURIComponent(query)}&api_key=${process.env.SERP_API_KEY}`;
 
@@ -21,3 +21,4 @@ export default async function getDeals(query) {
     }
 }
 
+module.exports = getDeals;
