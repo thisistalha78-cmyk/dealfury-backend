@@ -1,58 +1,32 @@
-const express = require("express");
+import express from "express";
 const router = express.Router();
 
-const serpapiSearch = require("../services/serpapi");
-const openrouterSummary = require("../services/openrouter");
+import getDeals from "../services/serpapi.js";
+import openrouterSummary from "../services/openrouter.js";
 
 router.get("/search", async (req, res) => {
+    const q = req.query.q;
+    if (!q) return res.json({ error: "Missing query parameter" });
+
     try {
-        const q = req.query.q;
-        if (!q) return res.json({ error: "Missing query parameter" });
+        // Step 1: Fetch deals
+        const deals = await getDeals(q);
 
-        console.log("🔍 SEARCH QUERY =", q);
+        // Step 2: Convert deals to text for summary
+        const textBlock = deals.slice(0, 8).map((d, i) =>
+            `${i + 1}) ${d.title} — Price: ${d.extracted_price || "N/A"}`
+        ).join("\n");
 
-        // 1️⃣ Fetch deals from SerpAPI
-        const serp = await serpapiSearch(q);
-
-        console.log("🔎 SERP DEALS COUNT =", serp.length);
-        console.log("🔎 FIRST DEAL SAMPLE =", serp[0] || "NO RESULTS");
-
-        // If no deals found → return early
-        if (!serp || serp.length === 0) {
-            return res.json({
-                summary: "No deals found.",
-                deals: []
-            });
-        }
-
-        // 2️⃣ Prepare text for AI summary
-        const textBlock = serp
-            .slice(0, 10)
-            .map((d, i) => `${i + 1}) ${d.title} — Price: ${d.extracted_price || "N/A"}`)
-            .join("\n");
-
-        console.log("🧾 TEXT SENT TO AI:\n", textBlock);
-
-        // 3️⃣ Generate summary using OpenRouter AI
+        // Step 3: AI generate summary
         const summary = await openrouterSummary(textBlock);
 
-        console.log("🤖 AI SUMMARY =", summary);
-
-        // 4️⃣ Send final response
-        return res.json({
-            summary,
-            deals: serp
-        });
+        res.json({ summary, deals });
 
     } catch (err) {
-        console.error("🔥 SEARCH ROUTE ERROR:", err);
+        console.error(err);
         res.json({ summary: "Something went wrong", deals: [] });
     }
 });
 
-module.exports = router;
-
-});
-
-module.exports = router;
+export default router;
 
